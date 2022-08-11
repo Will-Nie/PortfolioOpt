@@ -9,7 +9,7 @@ import numpy as np
 
 from env.gym_env.portfolio_env import StockPortfolioEnvStr1
 from data.data_demo import data_demo1
-from trainer.RLalgo.impala import ReinforcementLoss, FeaturesSerial, main
+from trainer.RLalgo.impala import ReinforcementLoss, FeaturesSerial, trainer
 
 # Process your data here [doing data  cleaning, features engineering here]
 tech_indicator_list = ['macd', 'rsi_30', 'cci_30', 'dx_30']
@@ -78,6 +78,6 @@ optimiser_config = {
 }
 
 # Choose your algo and train your agent
-main(FeaturesSerial, ReinforcementLoss, 100, 'trading-v1', env_train_kwargs, model_config, optimiser_config)
+trainer(FeaturesSerial, ReinforcementLoss, 100, 'trading-v1', env_train_kwargs, model_config, optimiser_config)
 
 print('good job')

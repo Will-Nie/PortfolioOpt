@@ -8,7 +8,7 @@ import pandas as pd
 
 from env.gym_env.portfolio_env import StockPortfolioEnvStr1
 from data.data_demo import data_demo1
-from trainer.RLalgo.ppo import main
+from trainer.RLalgo.ppo import trainer
 from trainer.config.ppo_strategy1 import main_config, create_config
 
 # Process your data here [doing data  cleaning, features engineering here]
@@ -46,6 +46,6 @@ env_test_kwargs = {
 
 # Choose your algo and train your agent
 
-main('trading-v0', main_config, create_config, env_train_kwargs, env_test_kwargs, 10000)
+trainer('trading-v0', main_config, create_config, env_train_kwargs, env_test_kwargs, 10000)
 
 print('good job')

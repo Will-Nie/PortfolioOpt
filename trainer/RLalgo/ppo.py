@@ -14,7 +14,7 @@ from ding.framework.middleware import multistep_trainer, StepCollector, interact
 from ding.utils import set_pkg_seed
 
 
-def main(env_name, main_config, create_config, env_train_kwargs, env_test_kwargs, max_train_iter):
+def trainer(env_name, main_config, create_config, env_train_kwargs, env_test_kwargs, max_train_iter):
     logging.getLogger().setLevel(logging.INFO)
     cfg = compile_config(main_config, create_cfg=create_config, auto=True)
     with task.start(async_mode=False, ctx=OnlineRLContext()):

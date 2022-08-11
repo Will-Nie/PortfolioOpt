@@ -600,7 +600,7 @@ class FeaturesSerial:
         return data, self.optimiser
 
 
-def main(FeaturesSerial, ReinforcementLoss, max_train_iter, env, kwargs, model_config, optimiser_config):
+def trainer(FeaturesSerial, ReinforcementLoss, max_train_iter, env, kwargs, model_config, optimiser_config):
     env = FeaturesSerial(env, kwargs, model_config, optimiser_config)
     loss = ReinforcementLoss('tobemodified')
     for _ in range(max_train_iter):
@@ -681,4 +681,4 @@ if __name__ == '__main__':
         }
     }
 
-    main(FeaturesSerial, ReinforcementLoss, 100, 'trading-v1', env_train_kwargs, model_config, optimiser_config)
+    trainer(FeaturesSerial, ReinforcementLoss, 100, 'trading-v1', env_train_kwargs, model_config, optimiser_config)
