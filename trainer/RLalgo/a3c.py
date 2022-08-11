@@ -24,18 +24,11 @@ import torch
 import torch.multiprocessing as mp
 
 
-
-
 class SharedAdam(optim.Adam):
     """Implements Adam algorithm with shared states.
     """
 
-    def __init__(self,
-                 params,
-                 lr=1e-3,
-                 betas=(0.9, 0.999),
-                 eps=1e-8,
-                 weight_decay=0):
+    def __init__(self, params, lr=1e-3, betas=(0.9, 0.999), eps=1e-8, weight_decay=0):
         super(SharedAdam, self).__init__(params, lr, betas, eps, weight_decay)
 
         for group in self.param_groups:
@@ -86,16 +79,15 @@ class SharedAdam(optim.Adam):
 
                 bias_correction1 = 1 - beta1 ** state['step'].item()
                 bias_correction2 = 1 - beta2 ** state['step'].item()
-                step_size = group['lr'] * math.sqrt(
-                    bias_correction2) / bias_correction1
+                step_size = group['lr'] * math.sqrt(bias_correction2) / bias_correction1
 
                 p.data.addcdiv_(-step_size, exp_avg, denom)
 
         return loss
 
+
 def ensure_shared_grads(model, shared_model):
-    for param, shared_param in zip(model.parameters(),
-                                   shared_model.parameters()):
+    for param, shared_param in zip(model.parameters(), shared_model.parameters()):
         if shared_param.grad is not None:
             return
         shared_param._grad = param.grad
@@ -136,8 +128,7 @@ def train(rank, args, shared_model, counter, lock, optimizer=None):
 
         for step in range(args.num_steps):
             episode_length += 1
-            value, logit, (hx, cx) = model((state.unsqueeze(0),
-                                            (hx, cx)))
+            value, logit, (hx, cx) = model((state.unsqueeze(0), (hx, cx)))
             prob = F.softmax(logit, dim=-1)
             log_prob = F.log_softmax(logit, dim=-1)
             entropy = -(log_prob * prob).sum(1, keepdim=True)
@@ -195,6 +186,7 @@ def train(rank, args, shared_model, counter, lock, optimizer=None):
         ensure_shared_grads(model, shared_model)
         optimizer.step()
 
+
 def test(rank, args, shared_model, counter):
     torch.manual_seed(args.seed + rank)
 
@@ -241,11 +233,12 @@ def test(rank, args, shared_model, counter):
             done = True
 
         if done:
-            print("Time {}, num steps {}, FPS {:.0f}, episode reward {}, episode length {}".format(
-                time.strftime("%Hh %Mm %Ss",
-                              time.gmtime(time.time() - start_time)),
-                counter.value, counter.value / (time.time() - start_time),
-                reward_sum, episode_length))
+            print(
+                "Time {}, num steps {}, FPS {:.0f}, episode reward {}, episode length {}".format(
+                    time.strftime("%Hh %Mm %Ss", time.gmtime(time.time() - start_time)), counter.value,
+                    counter.value / (time.time() - start_time), reward_sum, episode_length
+                )
+            )
             reward_sum = 0
             episode_length = 0
             actions.clear()
@@ -260,33 +253,21 @@ def create_atari_env(env_id):
     return env
 
 
-
 parser = argparse.ArgumentParser(description='A3C')
-parser.add_argument('--lr', type=float, default=0.0001,
-                    help='learning rate (default: 0.0001)')
-parser.add_argument('--gamma', type=float, default=0.99,
-                    help='discount factor for rewards (default: 0.99)')
-parser.add_argument('--gae-lambda', type=float, default=1.00,
-                    help='lambda parameter for GAE (default: 1.00)')
-parser.add_argument('--entropy-coef', type=float, default=0.01,
-                    help='entropy term coefficient (default: 0.01)')
-parser.add_argument('--value-loss-coef', type=float, default=0.5,
-                    help='value loss coefficient (default: 0.5)')
-parser.add_argument('--max-grad-norm', type=float, default=50,
-                    help='value loss coefficient (default: 50)')
-parser.add_argument('--seed', type=int, default=1,
-                    help='random seed (default: 1)')
-parser.add_argument('--num-processes', type=int, default=4,
-                    help='how many training processes to use (default: 4)')
-parser.add_argument('--num-steps', type=int, default=20,
-                    help='number of forward steps in A3C (default: 20)')
-parser.add_argument('--max-episode-length', type=int, default=1000000,
-                    help='maximum length of an episode (default: 1000000)')
-parser.add_argument('--env-name', default='trading-v1',
-                    help='environment to train on (default: PongDeterministic-v4)')
-parser.add_argument('--no-shared', default=False,
-                    help='use an optimizer without shared momentum.')
-
+parser.add_argument('--lr', type=float, default=0.0001, help='learning rate (default: 0.0001)')
+parser.add_argument('--gamma', type=float, default=0.99, help='discount factor for rewards (default: 0.99)')
+parser.add_argument('--gae-lambda', type=float, default=1.00, help='lambda parameter for GAE (default: 1.00)')
+parser.add_argument('--entropy-coef', type=float, default=0.01, help='entropy term coefficient (default: 0.01)')
+parser.add_argument('--value-loss-coef', type=float, default=0.5, help='value loss coefficient (default: 0.5)')
+parser.add_argument('--max-grad-norm', type=float, default=50, help='value loss coefficient (default: 50)')
+parser.add_argument('--seed', type=int, default=1, help='random seed (default: 1)')
+parser.add_argument('--num-processes', type=int, default=4, help='how many training processes to use (default: 4)')
+parser.add_argument('--num-steps', type=int, default=20, help='number of forward steps in A3C (default: 20)')
+parser.add_argument(
+    '--max-episode-length', type=int, default=1000000, help='maximum length of an episode (default: 1000000)'
+)
+parser.add_argument('--env-name', default='trading-v1', help='environment to train on (default: PongDeterministic-v4)')
+parser.add_argument('--no-shared', default=False, help='use an optimizer without shared momentum.')
 
 if __name__ == '__main__':
     os.environ['OMP_NUM_THREADS'] = '1'
@@ -297,9 +278,8 @@ if __name__ == '__main__':
     torch.manual_seed(args.seed)
     env = create_atari_env(args.env_name)
 
-    shared_model = ActorCritic(
-        env.observation_space.shape[0], env.action_space)
-        
+    shared_model = ActorCritic(env.observation_space.shape[0], env.action_space)
+
     shared_model.share_memory()
 
     if args.no_shared:

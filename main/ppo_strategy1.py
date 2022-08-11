@@ -20,31 +20,29 @@ print(f"Stock Dimension: {stock_dimension}, State Space: {state_space}")
 feature_dimension = len(tech_indicator_list)
 print(f"Feature Dimension: {feature_dimension}")
 
-
 env_train_kwargs = {
     'df': train,
-    "hmax": 100, 
-    "initial_amount": 1000000, 
-    "transaction_cost_pct": 0, 
-    "state_space": state_space, 
-    "stock_dim": stock_dimension, 
-    "tech_indicator_list": tech_indicator_list, 
-    "action_space": stock_dimension, 
+    "hmax": 100,
+    "initial_amount": 1000000,
+    "transaction_cost_pct": 0,
+    "state_space": state_space,
+    "stock_dim": stock_dimension,
+    "tech_indicator_list": tech_indicator_list,
+    "action_space": stock_dimension,
     "reward_scaling": 1e-1
 }
 
 env_test_kwargs = {
     'df': test,
-    "hmax": 100, 
-    "initial_amount": 1000000, 
-    "transaction_cost_pct": 0, 
-    "state_space": state_space, 
-    "stock_dim": stock_dimension, 
-    "tech_indicator_list": tech_indicator_list, 
-    "action_space": stock_dimension, 
+    "hmax": 100,
+    "initial_amount": 1000000,
+    "transaction_cost_pct": 0,
+    "state_space": state_space,
+    "stock_dim": stock_dimension,
+    "tech_indicator_list": tech_indicator_list,
+    "action_space": stock_dimension,
     "reward_scaling": 1e-1
 }
-
 
 # Choose your algo and train your agent
 

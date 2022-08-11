@@ -15,6 +15,7 @@ from utils.rnn import sequence_mask
 
 
 class PointerNetwork(nn.Module):
+
     def __init__(self, cfg):
         super(PointerNetwork, self).__init__()
         self.whole_cfg = cfg
@@ -28,13 +29,18 @@ class PointerNetwork(nn.Module):
 
         self.key_fc = fc_block(self.cfg.entity_embedding_dim, self.cfg.key_dim, activation=None, norm_type=None)
 
-        self.query_mlp = nn.Sequential(*[
-            fc_block(self.cfg.input_dim, self.cfg.func_dim, activation=self.activation_type),
-            fc_block(self.cfg.func_dim, self.cfg.key_dim, activation=None),
-        ])
+        self.query_mlp = nn.Sequential(
+            *[
+                fc_block(self.cfg.input_dim, self.cfg.func_dim, activation=self.activation_type),
+                fc_block(self.cfg.func_dim, self.cfg.key_dim, activation=None),
+            ]
+        )
         self.embed_mlp = nn.Sequential(
-            *[fc_block(self.cfg.key_dim, self.cfg.func_dim, activation=self.activation_type, norm_type=None),
-              fc_block(self.cfg.func_dim, self.cfg.input_dim, activation=None, norm_type=None)])
+            *[
+                fc_block(self.cfg.key_dim, self.cfg.func_dim, activation=self.activation_type, norm_type=None),
+                fc_block(self.cfg.func_dim, self.cfg.input_dim, activation=None, norm_type=None)
+            ]
+        )
 
         self.lstm_num_layers = self.cfg.lstm_num_layers
         self.lstm_hidden_dim = self.cfg.lstm_hidden_dim
@@ -53,8 +59,9 @@ class PointerNetwork(nn.Module):
         key = self.key_fc(entity_embedding)  # b, n, c
         key = torch.cat([key, padding_end], dim=1)  # b, (n+1), c
 
-        end_embeddings = torch.ones(key.shape, dtype=key.dtype, device=key.device) * self.end_embedding.squeeze(
-            dim=0)  # b, (n+1), c
+        end_embeddings = torch.ones(
+            key.shape, dtype=key.dtype, device=key.device
+        ) * self.end_embedding.squeeze(dim=0)  # b, (n+1), c
 
         flag = torch.ones(key.shape[:2], dtype=torch.bool, device=key.device).unsqueeze(dim=2)  # b, (n+1), 1
         flag[torch.arange(bs), entity_num] = 0
@@ -83,8 +90,14 @@ class PointerNetwork(nn.Module):
         return units
 
     def _query(
-            self, key: Tensor, entity_num: Tensor, autoregressive_embedding: Tensor, entity_mask: Tensor,
-            key_embeddings: Tensor, temperature: float = 1):
+        self,
+        key: Tensor,
+        entity_num: Tensor,
+        autoregressive_embedding: Tensor,
+        entity_mask: Tensor,
+        key_embeddings: Tensor,
+        temperature: float = 1
+    ):
 
         ae = autoregressive_embedding
         bs = ae.shape[0]  # batch size
@@ -99,9 +112,12 @@ class PointerNetwork(nn.Module):
         selected_units_num = torch.ones(bs, dtype=torch.long, device=ae.device) * self.MAX_SELECTED_UNITS_NUM
 
         # initialize hidden state
-        state = [(torch.zeros(bs, self.lstm_hidden_dim, device=ae.device),
-                  torch.zeros(bs, self.lstm_hidden_dim, device=ae.device))
-                 for _ in range(self.lstm_num_layers)]
+        state = [
+            (
+                torch.zeros(bs, self.lstm_hidden_dim,
+                            device=ae.device), torch.zeros(bs, self.lstm_hidden_dim, device=ae.device)
+            ) for _ in range(self.lstm_num_layers)
+        ]
 
         selected_units_one_hot = torch.zeros(*key_embeddings.shape[:2], device=ae.device)  # bs, n+1,1
         for i in range(self.MAX_SELECTED_UNITS_NUM):
@@ -128,7 +144,7 @@ class PointerNetwork(nn.Module):
             results_list.append(result)
             if self.entity_reduce_type == 'selected_units_num':
                 # put selected_units in cut step to selected_units_on_hot
-                selected_units_one_hot[torch.arange(bs)[~end_flag], result[~end_flag],] = 1
+                selected_units_one_hot[torch.arange(bs)[~end_flag], result[~end_flag], ] = 1
                 slected_num = selected_units_one_hot.sum(dim=1)
 
                 # take average of selected_units_embedding according to selected_units_num
@@ -148,8 +164,16 @@ class PointerNetwork(nn.Module):
         return logits, results, ae, selected_units_num
 
     def _train_query(
-            self, key: Tensor, entity_num: Tensor, autoregressive_embedding: Tensor, entity_mask: Tensor,
-            key_embeddings: Tensor, selected_units: Tensor, selected_units_num: Tensor, temperature: float = 1):
+        self,
+        key: Tensor,
+        entity_num: Tensor,
+        autoregressive_embedding: Tensor,
+        entity_mask: Tensor,
+        key_embeddings: Tensor,
+        selected_units: Tensor,
+        selected_units_num: Tensor,
+        temperature: float = 1
+    ):
         ae = autoregressive_embedding
         bs = ae.shape[0]
         seq_len = selected_units_num.max()
@@ -162,9 +186,12 @@ class PointerNetwork(nn.Module):
         selected_units_one_hot = torch.zeros(*key_embeddings.shape[:2], device=ae.device).unsqueeze(dim=2)
 
         # initialize hidden state
-        state = [(torch.zeros(bs, self.lstm_hidden_dim, device=ae.device),
-                  torch.zeros(bs, self.lstm_hidden_dim, device=ae.device))
-                 for _ in range(self.lstm_num_layers)]
+        state = [
+            (
+                torch.zeros(bs, self.lstm_hidden_dim,
+                            device=ae.device), torch.zeros(bs, self.lstm_hidden_dim, device=ae.device)
+            ) for _ in range(self.lstm_num_layers)
+        ]
 
         for i in range(max(seq_len, 1)):
             if i > 0:
@@ -205,22 +232,30 @@ class PointerNetwork(nn.Module):
         return logits, None, ae, selected_units_num
 
     def forward(
-            self,
-            embedding,
-            entity_embedding,
-            entity_num,
-            selected_units=None,
-            selected_units_num=None,
-            temperature=1,
+        self,
+        embedding,
+        entity_embedding,
+        entity_num,
+        selected_units=None,
+        selected_units_num=None,
+        temperature=1,
     ):
         key, entity_mask, key_embeddings = self._get_key_mask(entity_embedding, entity_num)
         if selected_units is not None and selected_units_num is not None:  # train
             logits, units, embedding, selected_units_num = self._train_query(
-                key, entity_num, embedding, entity_mask, key_embeddings, selected_units, selected_units_num,
-                temperature=temperature)
+                key,
+                entity_num,
+                embedding,
+                entity_mask,
+                key_embeddings,
+                selected_units,
+                selected_units_num,
+                temperature=temperature
+            )
         else:
             logits, units, embedding, selected_units_num = self._query(
-                key, entity_num, embedding, entity_mask, key_embeddings, temperature=temperature)
+                key, entity_num, embedding, entity_mask, key_embeddings, temperature=temperature
+            )
         return logits, units, embedding, selected_units_num
 
 
@@ -238,30 +273,57 @@ def setup_seed(seed):
 if __name__ == '__main__':
     from easydict import EasyDict
 
-    default_model_config = EasyDict({'agent': {'features': {'max_selected_units_num': 64, 'max_entity_num': 512}},
-                                     'model': {'input_dim': 1024,
-                                               'entity_embedding_dim': 256, 'key_dim': 32, 'func_dim': 256,
-                                               'lstm_hidden_dim': 32, 'lstm_num_layers': 1, 'max_entity_num': 64,
-                                               'activation': 'relu', 'entity_reduce_type': 'selected_units_num',
-                                               # ['constant', 'entity_num', 'selected_units_num'] only 'selected_units_num' works for now
-                                               }
-                                     }
-                                    )
+    default_model_config = EasyDict(
+        {
+            'agent': {
+                'features': {
+                    'max_selected_units_num': 64,
+                    'max_entity_num': 512
+                }
+            },
+            'model': {
+                'input_dim': 1024,
+                'entity_embedding_dim': 256,
+                'key_dim': 32,
+                'func_dim': 256,
+                'lstm_hidden_dim': 32,
+                'lstm_num_layers': 1,
+                'max_entity_num': 64,
+                'activation': 'relu',
+                'entity_reduce_type': 'selected_units_num',
+                # ['constant', 'entity_num', 'selected_units_num'] only 'selected_units_num' works for now
+            }
+        }
+    )
     net = PointerNetwork(default_model_config)
     input_dim = net.cfg.entity_embedding_dim
     batch_size = 10
-    embedding = torch.rand(size=(batch_size, 1024,))
+    embedding = torch.rand(size=(
+        batch_size,
+        1024,
+    ))
     MaxEntityNum = 512
-    entity_num = torch.ones(size=(batch_size,)).long() * 512
-    entity_embedings = torch.rand(size=(batch_size, MaxEntityNum, input_dim,))
+    entity_num = torch.ones(size=(batch_size, )).long() * 512
+    entity_embedings = torch.rand(size=(
+        batch_size,
+        MaxEntityNum,
+        input_dim,
+    ))
 
     setup_seed(20)
-    logits0, units, embedding0, selected_units_num = net.forward(embedding, entity_embedings, entity_num,
-                                                                 temperature=0.8)
+    logits0, units, embedding0, selected_units_num = net.forward(
+        embedding, entity_embedings, entity_num, temperature=0.8
+    )
 
     setup_seed(20)
-    logits1, _, embedding1, _ = net.forward(embedding, entity_embedings, entity_num, selected_units=units,
-                                            selected_units_num=selected_units_num, temperature=0.8)
+    logits1, _, embedding1, _ = net.forward(
+        embedding,
+        entity_embedings,
+        entity_num,
+        selected_units=units,
+        selected_units_num=selected_units_num,
+        temperature=0.8
+    )
 
     print((logits1 - logits0).abs().max())
     print((embedding1 - embedding0).abs().max())

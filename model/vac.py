@@ -95,7 +95,6 @@ class ConvEncoder(nn.Module):
         return x
 
 
-
 class VAC(nn.Module):
     r"""
     Overview:

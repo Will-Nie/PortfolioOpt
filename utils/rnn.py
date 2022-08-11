@@ -17,7 +17,7 @@ def is_sequence(data):
     return isinstance(data, list) or isinstance(data, tuple)
 
 
-def sequence_mask(lengths: torch.Tensor, max_len: Optional[int] =None):
+def sequence_mask(lengths: torch.Tensor, max_len: Optional[int] = None):
     r"""
         Overview:
             create a mask for a batch sequences with different lengths

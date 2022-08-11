@@ -73,16 +73,15 @@ class MultiHeadAttention(nn.Module):
             x = x.permute(0, 1, 3, 2).contiguous()
         return x
 
-    def forward(self,
-                query: torch.Tensor,
-                key: Optional[torch.Tensor] = None,
-                value: Optional[torch.Tensor] = None,
-                mask: torch.Tensor = None,
-                ) -> Tuple[torch.Tensor, Dict[str, torch.Tensor], torch.Tensor]:
+    def forward(
+            self,
+            query: torch.Tensor,
+            key: Optional[torch.Tensor] = None,
+            value: Optional[torch.Tensor] = None,
+            mask: torch.Tensor = None,
+    ) -> Tuple[torch.Tensor, Dict[str, torch.Tensor], torch.Tensor]:
         batch_size, query_len, dim = query.size()
-        assert (
-                dim == self.dim
-        ), 'Dimensions do not match: {} query vs {} configured'.format(dim, self.dim)
+        assert (dim == self.dim), 'Dimensions do not match: {} query vs {} configured'.format(dim, self.dim)
         assert mask is not None, 'Mask is None, please specify a mask'
         n_heads = self.n_heads
         dim_per_head = dim // n_heads
@@ -93,11 +92,7 @@ class MultiHeadAttention(nn.Module):
             # output is [batch_size * n_heads, seq_len, dim_per_head]
             bsz, seq_len, _ = tensor.size()
             tensor = tensor.view(batch_size, tensor.size(1), n_heads, dim_per_head)
-            tensor = (
-                tensor.transpose(1, 2)
-                    .contiguous()
-                    .view(batch_size * n_heads, seq_len, dim_per_head)
-            )
+            tensor = (tensor.transpose(1, 2).contiguous().view(batch_size * n_heads, seq_len, dim_per_head))
             return tensor
 
         # q, k, v are the transformed values
@@ -120,32 +115,32 @@ class MultiHeadAttention(nn.Module):
         dot_prod = q.div_(scale).bmm(k.transpose(1, 2))
         # [B * n_heads, query_len, key_len]
         attn_mask = (
-            (mask == 0)
-                .view(batch_size, 1, -1, full_key_len)
-                .repeat(1, n_heads, 1, 1)
-                .expand(batch_size, n_heads, query_len, full_key_len)
-                .view(batch_size * n_heads, query_len, full_key_len)
+            (mask == 0
+             ).view(batch_size, 1, -1,
+                    full_key_len).repeat(1, n_heads, 1,
+                                         1).expand(batch_size, n_heads, query_len,
+                                                   full_key_len).view(batch_size * n_heads, query_len, full_key_len)
         )
         assert attn_mask.shape == dot_prod.shape
         dot_prod.masked_fill_(attn_mask, neginf(dot_prod.dtype))
 
         attn_weights = F.softmax(
-            dot_prod, dim=-1, dtype=torch.float  # type: ignore
+            dot_prod,
+            dim=-1,
+            dtype=torch.float  # type: ignore
         ).type_as(query)
         attn_weights = self.attn_dropout(attn_weights)  # --attention-dropout
 
         attentioned = attn_weights.bmm(v)
         attentioned = (
-            attentioned.type_as(query)
-                .view(batch_size, n_heads, query_len, dim_per_head)
-                .transpose(1, 2)
-                .contiguous()
-                .view(batch_size, query_len, dim)
+            attentioned.type_as(query).view(batch_size, n_heads, query_len,
+                                            dim_per_head).transpose(1, 2).contiguous().view(batch_size, query_len, dim)
         )
 
         out = self.out_lin(attentioned)
 
         return out, dot_prod
+
     #
     # def forward(self, x, mask=None):
     #     r"""
@@ -183,12 +178,12 @@ class TransformerFFN(nn.Module):
     """
 
     def __init__(
-            self,
-            dim: int = None,
-            dim_hidden: int = None,
-            dropout: float = 0,
-            activation: str = 'relu',
-            **kwargs,
+        self,
+        dim: int = None,
+        dim_hidden: int = None,
+        dropout: float = 0,
+        activation: str = 'relu',
+        **kwargs,
     ):
         super(TransformerFFN, self).__init__(**kwargs)
         self.dim = dim
@@ -200,9 +195,7 @@ class TransformerFFN(nn.Module):
         elif activation == 'gelu':
             self.nonlinear = F.gelu
         else:
-            raise ValueError(
-                "Don't know how to handle --activation {}".format(activation)
-            )
+            raise ValueError("Don't know how to handle --activation {}".format(activation))
         self.lin1 = nn.Linear(self.dim, self.dim_hidden)
         self.lin2 = nn.Linear(self.dim_hidden, self.dim)
         nn.init.xavier_uniform_(self.lin1.weight)
@@ -225,16 +218,17 @@ class TransformerLayer(nn.Module):
         In transformer layer, first computes entries's attention and applies a feedforward layer
     """
 
-    def __init__(self,
-                 n_heads: int = None,
-                 embedding_size: int = None,
-                 ffn_size: int = None,
-                 attention_dropout: float = 0.0,
-                 relu_dropout: float = 0.0,
-                 dropout: float = 0.0,
-                 activation: str = 'relu',
-                 variant: Optional[str] = None,
-                 ):
+    def __init__(
+        self,
+        n_heads: int = None,
+        embedding_size: int = None,
+        ffn_size: int = None,
+        attention_dropout: float = 0.0,
+        relu_dropout: float = 0.0,
+        dropout: float = 0.0,
+        activation: str = 'relu',
+        variant: Optional[str] = None,
+    ):
         r"""
         Overview:
             Init transformer layer
@@ -254,16 +248,14 @@ class TransformerLayer(nn.Module):
         self.ffn_dim = ffn_size
         self.activation = activation
         self.variant = variant
-        self.attention = MultiHeadAttention(
-            n_heads=self.n_heads,
-            dim=embedding_size,
-            dropout=attention_dropout)
+        self.attention = MultiHeadAttention(n_heads=self.n_heads, dim=embedding_size, dropout=attention_dropout)
         self.norm1 = torch.nn.LayerNorm(embedding_size, eps=LAYER_NORM_EPS)
-        self.ffn = TransformerFFN(dim=embedding_size,
-                                  dim_hidden=ffn_size,
-                                  dropout=relu_dropout,
-                                  activation=activation,
-                                  )
+        self.ffn = TransformerFFN(
+            dim=embedding_size,
+            dim_hidden=ffn_size,
+            dropout=relu_dropout,
+            activation=activation,
+        )
         self.norm2 = torch.nn.LayerNorm(embedding_size, eps=LAYER_NORM_EPS)
         self.dropout = nn.Dropout(dropout)
 
@@ -306,16 +298,16 @@ class Transformer(nn.Module):
     '''
 
     def __init__(
-            self,
-            n_heads=8,
-            embedding_size: int = 128,
-            ffn_size: int = 128,
-            n_layers: int = 3,
-            attention_dropout: float = 0.0,
-            relu_dropout: float = 0.0,
-            dropout: float = 0.0,
-            activation: Optional[str] = 'relu',
-            variant: Optional[str] = 'prenorm',
+        self,
+        n_heads=8,
+        embedding_size: int = 128,
+        ffn_size: int = 128,
+        n_layers: int = 3,
+        attention_dropout: float = 0.0,
+        relu_dropout: float = 0.0,
+        dropout: float = 0.0,
+        activation: Optional[str] = 'relu',
+        variant: Optional[str] = 'prenorm',
     ):
         r"""
         Overview:
@@ -380,7 +372,7 @@ class Transformer(nn.Module):
         if mask is not None:
             x *= mask.unsqueeze(-1).type_as(x)
         else:
-            mask = torch.ones(size=x.shape[:2],dtype=torch.bool)
+            mask = torch.ones(size=x.shape[:2], dtype=torch.bool)
         if self.variant == 'postnorm':
             x = self.norm_embedding(x)
         for i in range(self.n_layers):
@@ -389,9 +381,10 @@ class Transformer(nn.Module):
             x = self.norm_embedding(x)
         return x
 
-if __name__  == '__main__':
-    transformer = Transformer(n_heads=8,embedding_size=128)
+
+if __name__ == '__main__':
+    transformer = Transformer(n_heads=8, embedding_size=128)
     from bigrl.core.torch_utils.network.rnn import sequence_mask
-    mask = sequence_mask(lengths=torch.tensor([1,2,3,4,5,6,2,3,0,0]),max_len=20)
-    y = transformer.forward(x = torch.randn(size=(10,20,128)),mask=mask)
+    mask = sequence_mask(lengths=torch.tensor([1, 2, 3, 4, 5, 6, 2, 3, 0, 0]), max_len=20)
+    y = transformer.forward(x=torch.randn(size=(10, 20, 128)), mask=mask)
     print(y)

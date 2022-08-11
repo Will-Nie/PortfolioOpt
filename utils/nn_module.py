@@ -47,14 +47,7 @@ def fc_block(
     return nn.Sequential(*block)
 
 
-def fc_block2(
-        in_channels,
-        out_channels,
-        activation=None,
-        norm_type=None,
-        use_dropout=False,
-        dropout_probability=0.5
-):
+def fc_block2(in_channels, out_channels, activation=None, norm_type=None, use_dropout=False, dropout_probability=0.5):
     r"""
     Overview:
         create a fully-connected block with activation, normalization and dropout
@@ -122,11 +115,19 @@ def conv2d_block(
     """
     block = []
     block.append(
-        nn.Conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=kernel_size, stride=stride,
-                  padding=padding, dilation=dilation, groups=groups,bias=bias)
+        nn.Conv2d(
+            in_channels=in_channels,
+            out_channels=out_channels,
+            kernel_size=kernel_size,
+            stride=stride,
+            padding=padding,
+            dilation=dilation,
+            groups=groups,
+            bias=bias
+        )
     )
     if norm_type is not None:
-        block.append(nn.GroupNorm(num_groups=1,  num_channels=out_channels))
+        block.append(nn.GroupNorm(num_groups=1, num_channels=out_channels))
     if isinstance(activation, str) and activation != 'none':
         block.append(build_activation(activation))
     elif isinstance(activation, torch.nn.Module):
@@ -135,16 +136,16 @@ def conv2d_block(
 
 
 def conv2d_block2(
-        in_channels,
-        out_channels,
-        kernel_size,
-        stride=1,
-        padding=0,
-        dilation=1,
-        groups=1,
-        activation: str = None,
-        norm_type=None,
-        bias: bool = True,
+    in_channels,
+    out_channels,
+    kernel_size,
+    stride=1,
+    padding=0,
+    dilation=1,
+    groups=1,
+    activation: str = None,
+    norm_type=None,
+    bias: bool = True,
 ):
     r"""
     Overview:
@@ -172,14 +173,22 @@ def conv2d_block2(
 
     block = []
     if norm_type is not None:
-        block.append(nn.GroupNorm(num_groups=1,  num_channels=out_channels))
+        block.append(nn.GroupNorm(num_groups=1, num_channels=out_channels))
     if isinstance(activation, str) and activation != 'none':
         block.append(build_activation(activation))
     elif isinstance(activation, torch.nn.Module):
         block.append(activation)
     block.append(
-        nn.Conv2d(in_channels=in_channels, out_channels=out_channels, kernel_size=kernel_size, stride=stride,
-                  padding=padding, dilation=dilation, groups=groups,bias=bias)
+        nn.Conv2d(
+            in_channels=in_channels,
+            out_channels=out_channels,
+            kernel_size=kernel_size,
+            stride=stride,
+            padding=padding,
+            dilation=dilation,
+            groups=groups,
+            bias=bias
+        )
     )
     return nn.Sequential(*block)
 
@@ -194,7 +203,7 @@ def deconv2d_block(
     groups=1,
     activation=None,
     norm_type=None,
-    bias:bool=True
+    bias: bool = True
 ):
     r"""
     Overview:
@@ -232,23 +241,24 @@ def deconv2d_block(
         )
     )
     if norm_type is not None:
-        block.append(nn.GroupNorm(num_groups=1,  num_channels=out_channels))
+        block.append(nn.GroupNorm(num_groups=1, num_channels=out_channels))
     if isinstance(activation, str) and activation != 'none':
         block.append(build_activation(activation))
     elif isinstance(activation, torch.nn.Module):
         block.append(activation)
     return nn.Sequential(*block)
 
+
 def MLP(
-        in_channels: int,
-        hidden_channels: int,
-        out_channels: int,
-        layer_num: int,
-        layer_fn: Callable = None,
-        activation: str = None,
-        norm_type: str = None,
-        use_dropout: bool = False,
-        dropout_probability: float = 0.5
+    in_channels: int,
+    hidden_channels: int,
+    out_channels: int,
+    layer_num: int,
+    layer_fn: Callable = None,
+    activation: str = None,
+    norm_type: str = None,
+    use_dropout: bool = False,
+    dropout_probability: float = 0.5
 ):
     r"""
     Overview:
@@ -281,10 +291,14 @@ def MLP(
         layer_fn = fc_block
     block = []
     for i, (in_channels, out_channels) in enumerate(zip(channels[:-1], channels[1:])):
-        block.append(layer_fn(in_channels=in_channels,
-                              out_channels=out_channels,
-                              activation=activation,
-                              norm_type=norm_type,
-                              use_dropout=use_dropout,
-                              dropout_probability=dropout_probability))
+        block.append(
+            layer_fn(
+                in_channels=in_channels,
+                out_channels=out_channels,
+                activation=activation,
+                norm_type=norm_type,
+                use_dropout=use_dropout,
+                dropout_probability=dropout_probability
+            )
+        )
     return nn.Sequential(*block)

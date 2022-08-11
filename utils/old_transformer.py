@@ -10,6 +10,7 @@ from .normalization import build_normalization
 
 
 class Attention(nn.Module):
+
     def __init__(self, input_dim, head_dim, output_dim, head_num, dropout):
         super(Attention, self).__init__()
         self.head_num = head_num
@@ -53,6 +54,7 @@ class Attention(nn.Module):
 
 
 class TransformerLayer(nn.Module):
+
     def __init__(self, input_dim, head_dim, hidden_dim, output_dim, head_num, mlp_num, dropout, activation, ln_type):
         super(TransformerLayer, self).__init__()
         self.attention = Attention(input_dim, head_dim, output_dim, head_num, dropout)
@@ -99,18 +101,18 @@ class Transformer(nn.Module):
     '''
 
     def __init__(
-            self,
-            input_dim,
-            head_dim=128,
-            hidden_dim=1024,
-            output_dim=256,
-            head_num=2,
-            mlp_num=2,
-            layer_num=3,
-            pad_val=0,
-            dropout_ratio=0.0,
-            activation=nn.ReLU(),
-            ln_type='pre'
+        self,
+        input_dim,
+        head_dim=128,
+        hidden_dim=1024,
+        output_dim=256,
+        head_num=2,
+        mlp_num=2,
+        layer_num=3,
+        pad_val=0,
+        dropout_ratio=0.0,
+        activation=nn.ReLU(),
+        ln_type='pre'
     ):
         super(Transformer, self).__init__()
         self.embedding = fc_block(input_dim, output_dim, activation=activation)

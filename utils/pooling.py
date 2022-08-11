@@ -6,6 +6,7 @@ from .nn_module import fc_block
 
 
 class AttentionPool(nn.Module):
+
     def __init__(self, key_dim, head_num, output_dim, max_num=None):
         super(AttentionPool, self).__init__()
         self.queries = torch.nn.Parameter(torch.zeros(1, 1, head_num, key_dim))

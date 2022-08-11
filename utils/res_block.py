@@ -32,7 +32,15 @@ class ResBlock(nn.Module):
         __init__, forward
     '''
 
-    def __init__(self, in_channels, out_channels=None, stride=1, downsample=None, activation='relu', norm_type='LN', ):
+    def __init__(
+        self,
+        in_channels,
+        out_channels=None,
+        stride=1,
+        downsample=None,
+        activation='relu',
+        norm_type='LN',
+    ):
         r"""
         Overview:
             Init the Residual Block
@@ -51,20 +59,24 @@ class ResBlock(nn.Module):
         self.norm_type = norm_type
         self.stride = stride
         self.downsample = downsample
-        self.conv1 = conv2d_block(in_channels=self.in_channels,
-                                  out_channels=self.out_channels,
-                                  kernel_size=3,
-                                  stride=self.stride,
-                                  padding=1,
-                                  activation=self.activation_type,
-                                  norm_type=self.norm_type)
-        self.conv2 = conv2d_block(in_channels=self.out_channels,
-                                  out_channels=self.out_channels,
-                                  kernel_size=3,
-                                  stride=self.stride,
-                                  padding=1,
-                                  activation=None,
-                                  norm_type=self.norm_type)
+        self.conv1 = conv2d_block(
+            in_channels=self.in_channels,
+            out_channels=self.out_channels,
+            kernel_size=3,
+            stride=self.stride,
+            padding=1,
+            activation=self.activation_type,
+            norm_type=self.norm_type
+        )
+        self.conv2 = conv2d_block(
+            in_channels=self.out_channels,
+            out_channels=self.out_channels,
+            kernel_size=3,
+            stride=self.stride,
+            padding=1,
+            activation=None,
+            norm_type=self.norm_type
+        )
         self.activation = build_activation(self.activation_type)
 
     def forward(self, x):
@@ -104,7 +116,15 @@ class ResBlock2(nn.Module):
         __init__, forward
     '''
 
-    def __init__(self, in_channels, out_channels=None, stride=1, downsample=None, activation='relu', norm_type='LN', ):
+    def __init__(
+        self,
+        in_channels,
+        out_channels=None,
+        stride=1,
+        downsample=None,
+        activation='relu',
+        norm_type='LN',
+    ):
         r"""
         Overview:
             Init the Residual Block
@@ -123,20 +143,24 @@ class ResBlock2(nn.Module):
         self.norm_type = norm_type
         self.stride = stride
         self.downsample = downsample
-        self.conv1 = conv2d_block2(in_channels=self.in_channels,
-                                   out_channels=self.out_channels,
-                                   kernel_size=3,
-                                   stride=self.stride,
-                                   padding=1,
-                                   activation=self.activation_type,
-                                   norm_type=self.norm_type)
-        self.conv2 = conv2d_block2(in_channels=self.out_channels,
-                                   out_channels=self.out_channels,
-                                   kernel_size=3,
-                                   stride=self.stride,
-                                   padding=1,
-                                   activation=self.activation_type,
-                                   norm_type=self.norm_type)
+        self.conv1 = conv2d_block2(
+            in_channels=self.in_channels,
+            out_channels=self.out_channels,
+            kernel_size=3,
+            stride=self.stride,
+            padding=1,
+            activation=self.activation_type,
+            norm_type=self.norm_type
+        )
+        self.conv2 = conv2d_block2(
+            in_channels=self.out_channels,
+            out_channels=self.out_channels,
+            kernel_size=3,
+            stride=self.stride,
+            padding=1,
+            activation=self.activation_type,
+            norm_type=self.norm_type
+        )
         self.activation = build_activation(self.activation_type)
 
     def forward(self, x):
@@ -160,6 +184,7 @@ class ResBlock2(nn.Module):
 
 
 class ResFCBlock(nn.Module):
+
     def __init__(self, in_channels, activation='relu', norm_type=None):
         r"""
         Overview:
@@ -281,10 +306,25 @@ class FiLM(nn.Module):
 
 
 class FiLMedResBlock(nn.Module):
-    def __init__(self, in_dim, out_dim=None, with_residual=True, with_batchnorm=False,
-                 with_cond=[False], dropout=0, num_extra_channels=0, extra_channel_freq=1,
-                 with_input_proj=3, num_cond_maps=0, kernel_size=3, batchnorm_affine=False,
-                 num_layers=1, condition_method='conv-film', debug_every=float('inf')):
+
+    def __init__(
+        self,
+        in_dim,
+        out_dim=None,
+        with_residual=True,
+        with_batchnorm=False,
+        with_cond=[False],
+        dropout=0,
+        num_extra_channels=0,
+        extra_channel_freq=1,
+        with_input_proj=3,
+        num_cond_maps=0,
+        kernel_size=3,
+        batchnorm_affine=False,
+        num_layers=1,
+        condition_method='conv-film',
+        debug_every=float('inf')
+    ):
         if out_dim is None:
             out_dim = in_dim
         super(FiLMedResBlock, self).__init__()
@@ -314,13 +354,19 @@ class FiLMedResBlock(nn.Module):
         if self.condition_method == 'block-input-film' and self.with_cond[0]:
             self.film = FiLM()
         if self.with_input_proj:
-            self.input_proj = nn.Conv2d(in_dim + (num_extra_channels if self.extra_channel_freq >= 1 else 0),
-                                        in_dim, kernel_size=self.with_input_proj, padding=self.with_input_proj // 2)
+            self.input_proj = nn.Conv2d(
+                in_dim + (num_extra_channels if self.extra_channel_freq >= 1 else 0),
+                in_dim,
+                kernel_size=self.with_input_proj,
+                padding=self.with_input_proj // 2
+            )
 
-        self.conv1 = nn.Conv2d(in_dim + self.num_cond_maps +
-                               (num_extra_channels if self.extra_channel_freq >= 2 else 0),
-                               out_dim, kernel_size=self.kernel_size,
-                               padding=self.kernel_size // 2)
+        self.conv1 = nn.Conv2d(
+            in_dim + self.num_cond_maps + (num_extra_channels if self.extra_channel_freq >= 2 else 0),
+            out_dim,
+            kernel_size=self.kernel_size,
+            padding=self.kernel_size // 2
+        )
         if self.condition_method == 'conv-film' and self.with_cond[0]:
             self.film = FiLM()
         if self.with_batchnorm:
@@ -346,8 +392,14 @@ class FiLMedResBlock(nn.Module):
             if isinstance(m, (nn.Conv2d, nn.Linear)):
                 init_params(m.weight)
 
-    def forward(self, x, gammas: Optional[torch.Tensor] = None, betas: Optional[torch.Tensor] = None,
-                extra_channels: Optional[torch.Tensor] = None, cond_maps: Optional[torch.Tensor] = None):
+    def forward(
+        self,
+        x,
+        gammas: Optional[torch.Tensor] = None,
+        betas: Optional[torch.Tensor] = None,
+        extra_channels: Optional[torch.Tensor] = None,
+        cond_maps: Optional[torch.Tensor] = None
+    ):
 
         if self.film is not None:
             if self.condition_method == 'block-input-film' and self.with_cond[0]:

@@ -7,11 +7,11 @@ from .transformer import Transformer
 
 
 class OnehotEncoder(nn.Module):
+
     def __init__(self, num_embeddings: int):
         super(OnehotEncoder, self).__init__()
         self.num_embeddings = num_embeddings
-        self.main = nn.Embedding.from_pretrained(torch.eye(self.num_embeddings), freeze=True,
-                                                 padding_idx=None)
+        self.main = nn.Embedding.from_pretrained(torch.eye(self.num_embeddings), freeze=True, padding_idx=None)
 
     def forward(self, x: torch.Tensor):
         x = x.long()
@@ -19,6 +19,7 @@ class OnehotEncoder(nn.Module):
 
 
 class OnehotEmbedding(nn.Module):
+
     def __init__(self, num_embeddings: int, embedding_dim: int):
         super(OnehotEmbedding, self).__init__()
         self.num_embeddings = num_embeddings
@@ -31,11 +32,13 @@ class OnehotEmbedding(nn.Module):
 
 
 class BinaryEncoder(nn.Module):
+
     def __init__(self, num_embeddings: int):
         super(BinaryEncoder, self).__init__()
         self.bit_num = num_embeddings
-        self.main = nn.Embedding.from_pretrained(self.get_binary_embed_matrix(self.bit_num), freeze=True,
-                                                 padding_idx=None)
+        self.main = nn.Embedding.from_pretrained(
+            self.get_binary_embed_matrix(self.bit_num), freeze=True, padding_idx=None
+        )
 
     @staticmethod
     def get_binary_embed_matrix(bit_num):
@@ -52,11 +55,13 @@ class BinaryEncoder(nn.Module):
 
 
 class SignBinaryEncoder(nn.Module):
+
     def __init__(self, num_embeddings):
         super(SignBinaryEncoder, self).__init__()
         self.bit_num = num_embeddings
-        self.main = nn.Embedding.from_pretrained(self.get_sign_binary_matrix(self.bit_num), freeze=True,
-                                                 padding_idx=None)
+        self.main = nn.Embedding.from_pretrained(
+            self.get_sign_binary_matrix(self.bit_num), freeze=True, padding_idx=None
+        )
         self.max_val = 2 ** (self.bit_num - 1) - 1
 
     @staticmethod
@@ -72,27 +77,31 @@ class SignBinaryEncoder(nn.Module):
 
     def forward(self, x: torch.Tensor):
         x = x.long()
-        x.clamp_(max=self.max_val, min=- self.max_val)
+        x.clamp_(max=self.max_val, min=-self.max_val)
         return self.main(x + self.max_val)
 
 
 class PositionEncoder(nn.Module):
+
     def __init__(self, num_embeddings, embedding_dim=None):
         super(PositionEncoder, self).__init__()
         self.n_position = num_embeddings
         self.embedding_dim = self.n_position if embedding_dim is None else embedding_dim
         self.position_enc = nn.Embedding.from_pretrained(
-            self.position_encoding_init(self.n_position, self.embedding_dim),
-            freeze=True, padding_idx=None)
+            self.position_encoding_init(self.n_position, self.embedding_dim), freeze=True, padding_idx=None
+        )
 
     @staticmethod
     def position_encoding_init(n_position, embedding_dim):
         ''' Init the sinusoid position encoding table '''
 
         # keep dim 0 for padding token position encoding zero vector
-        position_enc = np.array([
-            [pos / np.power(10000, 2 * (j // 2) / embedding_dim) for j in range(embedding_dim)]
-            for pos in range(n_position)])
+        position_enc = np.array(
+            [
+                [pos / np.power(10000, 2 * (j // 2) / embedding_dim) for j in range(embedding_dim)]
+                for pos in range(n_position)
+            ]
+        )
         position_enc[:, 0::2] = np.sin(position_enc[:, 0::2])  # apply sin on 0th,2nd,4th...embedding_dim
         position_enc[:, 1::2] = np.cos(position_enc[:, 1::2])  # apply cos on 1st,3rd,5th...embedding_dim
         return torch.from_numpy(position_enc).type(torch.FloatTensor)
@@ -102,6 +111,7 @@ class PositionEncoder(nn.Module):
 
 
 class TimeEncoder(nn.Module):
+
     def __init__(self, embedding_dim):
         super(TimeEncoder, self).__init__()
         self.embedding_dim = embedding_dim
@@ -125,6 +135,7 @@ class TimeEncoder(nn.Module):
 
 
 class UnsqueezeEncoder(nn.Module):
+
     def __init__(self, unsqueeze_dim: int = -1, norm_value: float = 1):
         super(UnsqueezeEncoder, self).__init__()
         self.unsqueeze_dim = unsqueeze_dim
@@ -138,6 +149,7 @@ class UnsqueezeEncoder(nn.Module):
 
 
 class BeginningBuildOrderEncoder(nn.Module):
+
     def __init__(self, cfg, bo_cfg):
         super(BeginningBuildOrderEncoder, self).__init__()
         self.whole_cfg = cfg
@@ -149,16 +161,18 @@ class BeginningBuildOrderEncoder(nn.Module):
         self.output_dim = self.cfg.output_dim
         self.embedding_dim = self.output_dim
         self.norm_type = self.cfg.norm_type
-        self.activation_type  = self.cfg.activation
+        self.activation_type = self.cfg.activation
 
-        self.encode_layers = MLP(in_channels=self.input_dim,
-                                  hidden_channels=self.embedding_dim,
-                                  out_channels=self.embedding_dim,
-                                  layer_num=1,
-                                  layer_fn=fc_block,
-                                  activation=self.activation_type,
-                                  norm_type=self.norm_type,
-                                  use_dropout=False)
+        self.encode_layers = MLP(
+            in_channels=self.input_dim,
+            hidden_channels=self.embedding_dim,
+            out_channels=self.embedding_dim,
+            layer_num=1,
+            layer_fn=fc_block,
+            activation=self.activation_type,
+            norm_type=self.norm_type,
+            use_dropout=False
+        )
 
         self.transformer_cfg = self.cfg.transformer
         self.transformer = Transformer(
@@ -202,7 +216,9 @@ class BeginningBuildOrderEncoder(nn.Module):
         x = self.embedd_fc(x)
         return x
 
+
 class OldBeginningBuildOrderEncoder(nn.Module):
+
     def __init__(self, cfg, bo_cfg):
         super(OldBeginningBuildOrderEncoder, self).__init__()
         self.whole_cfg = cfg
@@ -213,8 +229,11 @@ class OldBeginningBuildOrderEncoder(nn.Module):
         self.input_dim = self.cfg.action_one_hot_dim + self.beginning_order_length + self.cfg.binary_dim * 2
         self.activation_type = self.cfg.activation
         self.transformer = OldTransformer(
-            input_dim=self.input_dim, head_dim=self.cfg.head_dim, hidden_dim=self.cfg.output_dim * 2,
-            output_dim=self.cfg.output_dim)
+            input_dim=self.input_dim,
+            head_dim=self.cfg.head_dim,
+            hidden_dim=self.cfg.output_dim * 2,
+            output_dim=self.cfg.output_dim
+        )
         self.embedd_fc = fc_block(self.cfg.output_dim, self.output_dim, activation=self.activation_type)
         self.action_one_hot = OnehotEncoder(num_embeddings=self.cfg.action_one_hot_dim)
         self.order_one_hot = OnehotEncoder(num_embeddings=self.beginning_order_length)

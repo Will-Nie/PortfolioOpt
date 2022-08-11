@@ -1,7 +1,6 @@
 import pandas as pd
 import yfinance as yf
 
-
 import datetime
 from multiprocessing.sharedctypes import Value
 
@@ -153,15 +152,11 @@ class FeatureEngineer:
                     temp_indicator = stock[stock.tic == unique_ticker[i]][indicator]
                     temp_indicator = pd.DataFrame(temp_indicator)
                     temp_indicator["tic"] = unique_ticker[i]
-                    temp_indicator["date"] = df[df.tic == unique_ticker[i]][
-                        "date"
-                    ].to_list()
+                    temp_indicator["date"] = df[df.tic == unique_ticker[i]]["date"].to_list()
                     indicator_df = pd.concat([indicator_df, temp_indicator], axis=0, ignore_index=True)
                 except Exception as e:
                     print(e)
-            df = df.merge(
-                indicator_df[["tic", "date", indicator]], on=["tic", "date"], how="left"
-            )
+            df = df.merge(indicator_df[["tic", "date", indicator]], on=["tic", "date"], how="left")
         df = df.sort_values(by=["date", "tic"])
         return df
         # df = data.set_index(['date','tic']).sort_index()
@@ -189,9 +184,7 @@ class FeatureEngineer:
         :return: (df) pandas dataframe
         """
         df = data.copy()
-        df_vix = YahooDownloader(
-            start_date=df.date.min(), end_date=df.date.max(), ticker_list=["^VIX"]
-        ).fetch_data()
+        df_vix = YahooDownloader(start_date=df.date.min(), end_date=df.date.max(), ticker_list=["^VIX"]).fetch_data()
         vix = df_vix[["date", "close"]]
         vix.columns = ["date", "vix"]
 
@@ -228,25 +221,17 @@ class FeatureEngineer:
         for i in range(start, len(unique_date)):
             current_price = df_price_pivot[df_price_pivot.index == unique_date[i]]
             # use one year rolling window to calcualte covariance
-            hist_price = df_price_pivot[
-                (df_price_pivot.index < unique_date[i])
-                & (df_price_pivot.index >= unique_date[i - 252])
-            ]
+            hist_price = df_price_pivot[(df_price_pivot.index < unique_date[i])
+                                        & (df_price_pivot.index >= unique_date[i - 252])]
             # Drop tickers which has number missing values more than the "oldest" ticker
-            filtered_hist_price = hist_price.iloc[
-                hist_price.isna().sum().min() :
-            ].dropna(axis=1)
+            filtered_hist_price = hist_price.iloc[hist_price.isna().sum().min():].dropna(axis=1)
 
             cov_temp = filtered_hist_price.cov()
-            current_temp = current_price[[x for x in filtered_hist_price]] - np.mean(
-                filtered_hist_price, axis=0
-            )
+            current_temp = current_price[[x for x in filtered_hist_price]] - np.mean(filtered_hist_price, axis=0)
             # cov_temp = hist_price.cov()
             # current_temp=(current_price - np.mean(hist_price,axis=0))
 
-            temp = current_temp.values.dot(np.linalg.pinv(cov_temp)).dot(
-                current_temp.values.T
-            )
+            temp = current_temp.values.dot(np.linalg.pinv(cov_temp)).dot(current_temp.values.T)
             if temp > 0:
                 count += 1
                 if count > 2:
@@ -258,12 +243,11 @@ class FeatureEngineer:
                 turbulence_temp = 0
             turbulence_index.append(turbulence_temp)
         try:
-            turbulence_index = pd.DataFrame(
-                {"date": df_price_pivot.index, "turbulence": turbulence_index}
-            )
+            turbulence_index = pd.DataFrame({"date": df_price_pivot.index, "turbulence": turbulence_index})
         except ValueError:
             raise Exception("Turbulence information could not be added.")
         return turbulence_index
+
 
 class YahooDownloader:
     """Provides methods for retrieving daily stock data from
@@ -305,9 +289,7 @@ class YahooDownloader:
         # Download and save the data in a pandas DataFrame:
         data_df = pd.DataFrame()
         for tic in self.ticker_list:
-            temp_df = yf.download(
-                tic, start=self.start_date, end=self.end_date, proxy=proxy
-            )
+            temp_df = yf.download(tic, start=self.start_date, end=self.end_date, proxy=proxy)
             temp_df["tic"] = tic
             data_df = pd.concat([data_df, temp_df], axis=0)
         # reset the index, we want to use numbers as index instead of dates
