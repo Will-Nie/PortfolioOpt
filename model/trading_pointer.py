@@ -1,3 +1,6 @@
+import sys, os
+sys.path.insert(0, os.getcwd())
+
 import random
 from typing import Optional
 
@@ -5,8 +8,9 @@ import torch
 import torch.nn as nn
 from torch import Tensor
 
-from network.lstm import script_lnlstm
-from network.nn_module import fc_block
+from utils.lstm import script_lnlstm
+from utils.nn_module import fc_block
+from model.vac import VAC
 
 
 class PointerNetwork(nn.Module):
@@ -33,6 +37,7 @@ class PointerNetwork(nn.Module):
         self.lstm_num_layers = self.cfg.lstm_num_layers
         self.lstm_hidden_dim = self.cfg.lstm_hidden_dim
         self.lstm = script_lnlstm(self.cfg.key_dim, self.lstm_hidden_dim, self.lstm_num_layers)
+        self.value_net = VAC(obs_shape=self.cfg.input_dim, action_shape=1)
 
     def _get_key_mask(self, entity_embedding, entity_mask):
         key = self.key_fc(entity_embedding)  # b, n, c
@@ -164,7 +169,11 @@ class PointerNetwork(nn.Module):
         else:
             logits, units, embedding = self._query(
                 key, embedding, entity_mask, key_embeddings, temperature=temperature)
-        return logits, units, embedding
+
+
+        output = self.value_net.forward(embedding, mode='compute_actor_critic')
+        value_logit, value = output['logit'], output['value']
+        return logits, units, embedding, value_logit, value
 
 
 import numpy as np
@@ -182,9 +191,9 @@ if __name__ == '__main__':
     from easydict import EasyDict
 
     default_model_config = EasyDict({
-        'model': {'input_dim': 1024, 'max_selected_units_num': 400, 'max_entity_num': 2000,
+        'model': {'input_dim': 14, 'max_selected_units_num': 400, 'max_entity_num': 2000,
                   'entity_embedding_dim': 256, 'key_dim': 32, 'func_dim': 256,
-                  'lstm_hidden_dim': 32, 'lstm_num_layers': 1, 'max_entity_num': 64,
+                  'lstm_hidden_dim': 32, 'lstm_num_layers': 1,
                   'activation': 'relu', 'entity_reduce_type': 'selected_units_num',# ['constant', 'entity_num', 'selected_units_num']
                   }
     }
@@ -200,10 +209,10 @@ if __name__ == '__main__':
     entity_embedings = torch.rand(size=(batch_size, MaxEntityNum, entity_embedding_dim,))
 
     setup_seed(20)
-    logits0, units, embedding0 = net.forward(embedding, entity_embedings, entity_mask, temperature=0.8)
+    logits0, units, embedding0 = net.forward(embedding, entity_embedings, entity_mask, temperature=0.8) # test
 
     setup_seed(20)
-    logits1, _, embedding1 = net.forward(embedding, entity_embedings, entity_mask, selected_units=units,
+    logits1, _, embedding1 = net.forward(embedding, entity_embedings, entity_mask, selected_units=units, # trainer, entity mask --> boolean
                                          temperature=0.8)
 
     print((logits1 - logits0).abs().max())

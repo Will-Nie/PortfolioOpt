@@ -1,3 +1,6 @@
+import sys, os
+sys.path.insert(0, os.getcwd())
+
 import math
 import random
 from typing import Optional
@@ -6,9 +9,9 @@ import torch
 import torch.nn as nn
 from torch import Tensor
 
-from network.lstm import script_lnlstm
-from network.nn_module import fc_block
-from network.rnn import sequence_mask
+from utils.lstm import script_lnlstm
+from utils.nn_module import fc_block
+from utils.rnn import sequence_mask
 
 
 class PointerNetwork(nn.Module):
