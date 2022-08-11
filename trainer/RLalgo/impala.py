@@ -565,11 +565,17 @@ def main(FeaturesSerial, ReinforcementLoss, max_train_iter, env, kwargs, model_c
     loss = ReinforcementLoss('tobemodified')
     for _ in range(max_train_iter):
         input, optimiser = env.collect_data()
-
-        #flatten
-        #logits1, _, _, _, _ = self.net(torch.tensor(state.reshape(1,140)).float(), entity_embedings, entity_mask, selected_units=action)
-        #View
+        print('*'*20)
+        print('Collect finished --> start optimise')
+        print('*'*20)
+        # you can write the learning forward code inside the collect_data file or write like the three lines below
+        # flatten
+        # logits1, _, _, _, _ = self.net(torch.tensor(state.reshape(1,140)).float(), entity_embedings, entity_mask, selected_units=action)
+        # View
         total_loss, loss_info_dict = loss.compute_loss(input)
+        print('*'*20)
+        print('Optimisation ends --> start collecting')
+        print('*'*20)
         optimiser.zero_grad()
         total_loss.backward()
         optimiser.step()

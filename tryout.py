@@ -75,3 +75,32 @@ env_kwargs = {
 env = gym.make('trading-v0', **env_kwargs)
 
 print('good job')
+
+
+
+# below is the code snippet for programming pointer network
+'''
+play with the env if interested
+env = gym.make('trading-v1', **env_train_kwargs)
+env.reset()
+env.step(np.array([0,0,1,1,0,0,1,0,1,0,0,1,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,1]))
+'''
+
+
+from easydict import EasyDict
+import torch
+from model.trading_pointer import PointerNetwork
+embedding = torch.rand(size=(1, 140,))
+entity_embedings = torch.rand(size=(1, 28, 16,))
+entity_mask = torch.rand(size=(1, 28,)) > 0
+
+default_model_config = EasyDict({
+    'model': {'input_dim': 140, 'max_selected_units_num': 14, 'max_entity_num': 28,
+                'entity_embedding_dim': 16, 'key_dim': 32, 'func_dim': 256,
+                'lstm_hidden_dim': 32, 'lstm_num_layers': 1,
+                'activation': 'relu', 'entity_reduce_type': 'selected_units_num',# ['constant', 'entity_num', 'selected_units_num']
+                }
+}
+)
+net = PointerNetwork(default_model_config)
+logits1, units, embedding1 = net.forward(embedding, entity_embedings, entity_mask, temperature=0.8) # trainer, entity mask --> boolean

@@ -9,8 +9,7 @@ import numpy as np
 
 from env.gym_env.portfolio_env import StockPortfolioEnvStr1
 from data.data_demo import data_demo1
-from trainer.RLalgo.ppo import main
-from trainer.config.ppo_strategy2 import main_config, create_config
+from trainer.RLalgo.impala import ReinforcementLoss, FeaturesSerial,main
 
 # Process your data here [doing data  cleaning, features engineering here]
 tech_indicator_list = ['macd', 'rsi_30', 'cci_30', 'dx_30']
@@ -52,30 +51,19 @@ env_test_kwargs = {
     "max_step": max_step
 }
 
-env = gym.make('trading-v1', **env_train_kwargs)
-env.reset()
-env.step(np.array([0,0,1,1,0,0,1,0,1,0,0,1,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1,1]))
+model_config = {
+'model': {'input_dim': 140, 'max_selected_units_num': chosen_stock_number, 'max_entity_num': stock_dimension,
+            'entity_embedding_dim': 16, 'key_dim': 32, 'func_dim': 256,
+            'lstm_hidden_dim': 32, 'lstm_num_layers': 1,
+            'activation': 'relu', 'entity_reduce_type': 'selected_units_num',# ['constant', 'entity_num', 'selected_units_num']
+            }
+    }
 
-from easydict import EasyDict
-import torch
-from model.trading_pointer import PointerNetwork
-embedding = torch.rand(size=(1, 140,))
-entity_embedings = torch.rand(size=(1, 28, 16,))
-entity_mask = torch.rand(size=(1, 28,)) > 0
+optimiser_config = {'cfg':{'type':'adam', 'learning_rate': 0.001, 'weight_decay':0, 'eps':1e-8, 'decay':0.009, 'momentum': 0.9, 'amsgrad':False}}    
 
-default_model_config = EasyDict({
-    'model': {'input_dim': 140, 'max_selected_units_num': 14, 'max_entity_num': 28,
-                'entity_embedding_dim': 16, 'key_dim': 32, 'func_dim': 256,
-                'lstm_hidden_dim': 32, 'lstm_num_layers': 1,
-                'activation': 'relu', 'entity_reduce_type': 'selected_units_num',# ['constant', 'entity_num', 'selected_units_num']
-                }
-}
-)
-net = PointerNetwork(default_model_config)
-logits1, units, embedding1 = net.forward(embedding, entity_embedings, entity_mask, temperature=0.8) # trainer, entity mask --> boolean
+
 
 # Choose your algo and train your agent
-
-main('trading-v1', main_config, create_config, env_train_kwargs, env_test_kwargs, 10000)
+main(FeaturesSerial, ReinforcementLoss, 100, 'trading-v1', env_train_kwargs, model_config, optimiser_config)
 
 print('good job')
