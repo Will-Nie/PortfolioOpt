@@ -6,6 +6,7 @@ yapf==0.29.0
 easydict
 alpaca_trade_api
 FinQuant
+pandas_profiling
 
 
 # strategy 2 requires bigrl -- to request access to this repo, please contact Zhang Shenghan
