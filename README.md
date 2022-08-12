@@ -15,3 +15,7 @@
 6.  ``trainer`` This part is comprised of two parts. In principle, ``RLalgo`` should not be modified unless ones wants to add more algorithms. ``config`` can be modified as wishes.
 
 7.  ``utils`` includes all necessities supporting the agent to run.
+
+# To run
+
+Please directly run the strategy in the ``main`` file
